@@ -1,0 +1,341 @@
+
+name: Build and Deploy Pages
+
+on:
+  workflow_dispatch:
+
+  # 投稿祭開始後に有効化
+  # 日本時間で3時間おき
+  # schedule:
+  #   - cron: "0 */3 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hikigatari-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build all sites
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      # ==================================
+      # リポジトリ取得
+      # ==================================
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ==================================
+      # 非公開設定ファイルの生成
+      # ==================================
+
+      - name: Create private Sheets configuration
+        shell: bash
+        env:
+          YEAR_SHEETS_JSON: ${{ secrets.YEAR_SHEETS_JSON }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$YEAR_SHEETS_JSON" ]]; then
+            echo "YEAR_SHEETS_JSON is not configured." >&2
+            exit 1
+          fi
+
+          mkdir -p config
+
+          printf '%s' "$YEAR_SHEETS_JSON" \
+            > config/year-sheets.json
+
+          chmod 600 config/year-sheets.json
+
+          jq -e 'type == "object"' \
+            config/year-sheets.json > /dev/null
+
+      # ==================================
+      # 公開年度・設定ファイルの検証
+      # ==================================
+
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          YEARS_CONFIG="config/deploy-years.json"
+          SHEETS_CONFIG="config/year-sheets.json"
+
+          # 年度一覧の形式と重複を検証
+          jq -e '
+            .years |
+            if type != "array" or length == 0
+            then false
+            else
+              (
+                all(.[]; (
+                  type == "string"
+                  and test("^[0-9]{4}$")
+                ))
+                and
+                (length == (unique | length))
+              )
+            end
+          ' "$YEARS_CONFIG" > /dev/null
+
+          # 各年度の設定と必要ファイルを検証
+          while IFS= read -r year; do
+
+            echo "Validating $year"
+
+            CONFIG="$year/config/settings.json"
+
+            test -f "$CONFIG"
+            test -f "$year/backend/requirements.txt"
+            test -f "$year/backend/scripts/config.py"
+            test -f "$year/backend/scripts/generate_works.py"
+            test -f "$year/frontend/package.json"
+            test -f "$year/frontend/package-lock.json"
+
+            # スプレッドシートIDが設定されていること
+            # IDそのものはログに出力しない
+            jq -e --arg year "$year" '
+              (.[$year].works |
+                type == "string" and length > 0)
+              and
+              (.[$year].work_details |
+                type == "string" and length > 0)
+            ' "$SHEETS_CONFIG" > /dev/null
+
+            # 年度ごとの公開設定を検証
+            jq -e --arg year "$year" '
+              (
+                .deploy.base_path |
+                type == "string"
+                and endswith("/" + $year)
+              )
+              and
+              (
+                .deploy.works_sheet |
+                type == "string" and length > 0
+              )
+              and
+              (
+                .deploy.work_details_sheet |
+                type == "string" and length > 0
+              )
+            ' "$CONFIG" > /dev/null
+
+          done < <(
+            jq -r '.years[]' "$YEARS_CONFIG"
+          )
+
+      # ==================================
+      # Python / Node.js
+      # ==================================
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # ==================================
+      # Google認証
+      # ==================================
+
+      - name: Authenticate to Google
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_JSON }}'
+          create_credentials_file: true
+          export_environment_variables: true
+
+      # ==================================
+      # 全年度のサイトをビルド
+      # ==================================
+
+      - name: Build all years
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p pages-dist
+
+          # GitHub PagesのJekyll処理を無効化
+          touch pages-dist/.nojekyll
+
+          while IFS= read -r year; do
+
+            echo "================================"
+            echo "Building $year"
+            echo "================================"
+
+            BACKEND="$year/backend"
+            FRONTEND="$year/frontend"
+            CONFIG="$year/config/settings.json"
+
+            BASE_PATH=$(
+              jq -r '.deploy.base_path' "$CONFIG"
+            )
+
+            # ------------------------------
+            # Python依存ライブラリ
+            # ------------------------------
+
+            python -m pip install \
+              -r "$BACKEND/requirements.txt"
+
+            # ------------------------------
+            # works.json生成
+            # ------------------------------
+
+            (
+              cd "$BACKEND"
+
+              python scripts/generate_works.py \
+                --year "$year" \
+                --mode live
+            )
+
+            # ------------------------------
+            # comments.json
+            # ------------------------------
+
+            # 感想バックエンドは未実装のため、
+            # 現在は既存のJSONを使用
+            test -f \
+              "$FRONTEND/public/data/comments.json"
+
+            # ------------------------------
+            # Next.jsビルド
+            # ------------------------------
+
+            (
+              cd "$FRONTEND"
+
+              npm ci
+
+              NEXT_PUBLIC_BASE_PATH="$BASE_PATH" \
+                npm run build
+            )
+
+            # ------------------------------
+            # 成果物の検証・統合
+            # ------------------------------
+
+            test -f "$FRONTEND/out/index.html"
+
+            mkdir -p "pages-dist/$year"
+
+            cp -a \
+              "$FRONTEND/out/." \
+              "pages-dist/$year/"
+
+            echo "Finished $year"
+
+          done < <(
+            jq -r '.years[]' config/deploy-years.json
+          )
+
+      # ==================================
+      # 全年度へのリンクを持つトップページ
+      # ==================================
+
+      - name: Generate site index
+        shell: bash
+        run: |
+          python - <<'PY'
+          import html
+          import json
+          from pathlib import Path
+
+          config = json.loads(
+              Path("config/deploy-years.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+
+          links = "\n".join(
+              f'<li><a href="./{year}/">'
+              f'弾き語り曲投稿祭 {html.escape(year)}'
+              '</a></li>'
+              for year in config["years"]
+          )
+
+          page = f"""<!doctype html>
+          <html lang="ja">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport"
+                  content="width=device-width, initial-scale=1">
+            <title>弾き語り曲投稿祭</title>
+            <style>
+              body {{
+                max-width: 720px;
+                margin: 80px auto;
+                padding: 0 24px;
+                font-family: sans-serif;
+                background: #0d0f13;
+                color: #f2f0e9;
+              }}
+              a {{ color: #adc5be; }}
+              li {{ margin: 16px 0; }}
+            </style>
+          </head>
+          <body>
+            <h1>弾き語り曲投稿祭</h1>
+            <p>開催年度を選択してください。</p>
+            <ul>
+              {links}
+            </ul>
+          </body>
+          </html>
+          """
+
+          Path("pages-dist/index.html").write_text(
+              page,
+              encoding="utf-8"
+          )
+          PY
+
+      # ==================================
+      # GitHub Pages成果物のアップロード
+      # ==================================
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: pages-dist
+          include-hidden-files: true
+
+  # ====================================
+  # GitHub Pagesへのデプロイ
+  # ====================================
+
+  deploy:
+    name: Deploy all sites
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

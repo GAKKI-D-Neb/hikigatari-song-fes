@@ -1,0 +1,14 @@
+
+{
+  "fetch": {
+    "tag": "本当のNEXTAGE祭2026",
+    "sheet": "works_test",
+    "limit": 10,
+    "production": false
+  },
+  "deploy": {
+    "base_path": "/hikigatari-song-fes/2027",
+    "works_sheet": "works",
+    "work_details_sheet": "work_details"
+  }
+}
