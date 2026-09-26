@@ -324,6 +324,7 @@ a.related-link-card:hover { border-color: #59616e; background: #1d2128; transfor
 .status-badge { display: inline-flex; min-width: 36px; justify-content: center; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .08em; }
 .status-badge--ok { background: rgba(141,168,160,.14); color: var(--accent-strong); border: 1px solid rgba(141,168,160,.32); }
 .status-badge--ng { background: rgba(210,191,157,.1); color: var(--warm); border: 1px solid rgba(210,191,157,.28); }
+.status-badge--tolerated { color: #d9b978; background: rgba(176, 135, 65, 0.15); border: 1px solid rgba(176, 135, 65, 0.35); }
 
 /* FAQ */
 .faq-item { border-top: 1px solid var(--line); }

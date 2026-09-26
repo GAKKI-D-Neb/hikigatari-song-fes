@@ -374,15 +374,15 @@ export default function GuidePage() {
                     <td>
                       <span
                         className={
-                          "status-badge status-badge--ng"
+                          "status-badge status-badge--tolerated"
                         }
                       >
-                        NG
+                        △
                       </span>
                     </td>
 
                     <td>
-                      主旋律とは別のコーラス・ハモリを同時に重ねるなど、一人では歌唱できない構成
+                      メインボーカルを補助するコーラス・ハモリを重ねる構成（コーラスを除いても一人で弾き語りとして成立する場合）
                     </td>
                   </tr>
 
@@ -414,6 +414,10 @@ export default function GuidePage() {
 
             <p className="form-note">
               ボーカルのダブリングについては、MIX処理の範囲内としてOKとします。
+            </p>
+            <p className="form-note">
+              コーラス・ハモリについては、音源制作上の補助的な要素として例外的に許容します。
+              ただし、コーラスを除いても一人で弾き語りとして成立する構成を基本としてください。
             </p>
 
             <p className="form-note">
