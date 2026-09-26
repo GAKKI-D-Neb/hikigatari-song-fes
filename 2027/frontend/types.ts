@@ -1,3 +1,4 @@
+
 export type Work = {
   videoId: string;
   title: string;
@@ -14,6 +15,7 @@ export type Comment = {
   commentId: string;
   videoId: string;
   authorName: string;
+  xAccount?: string | null;
   comment: string;
   submittedAt: string;
 };

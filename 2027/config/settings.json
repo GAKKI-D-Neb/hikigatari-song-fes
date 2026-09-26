@@ -9,6 +9,8 @@
   "deploy": {
     "base_path": "/hikigatari-song-fes/2027",
     "works_sheet": "works",
-    "work_details_sheet": "work_details"
+    "work_details_sheet": "work_details",
+    "comments_sheet": "comments",
+    "comments_api_url": "https://script.google.com/macros/s/AKfycbwkjI2bzqCLBE_tyBSGiOdTJf83qDDM5jV9EXoLwJOBL1OMpBapP2D_agq-e-QNHbzi/exec"
   }
 }

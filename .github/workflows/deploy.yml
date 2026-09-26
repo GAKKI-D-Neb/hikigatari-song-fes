@@ -208,14 +208,21 @@ jobs:
             # comments.json
             # ------------------------------
 
-            # 感想バックエンドは未実装のため、
-            # 現在は既存のJSONを使用
-            test -f \
-              "$FRONTEND/public/data/comments.json"
+            (
+              cd "$BACKEND"
+
+              python scripts/generate_comments.py \
+                --year "$year"
+            )
 
             # ------------------------------
             # Next.jsビルド
             # ------------------------------
+
+            COMMENTS_API_URL=$(
+              jq -er '.deploy.comments_api_url |
+                select(type == "string" and length > 0)' "$CONFIG"
+            )
 
             (
               cd "$FRONTEND"
@@ -223,6 +230,7 @@ jobs:
               npm ci
 
               NEXT_PUBLIC_BASE_PATH="$BASE_PATH" \
+              NEXT_PUBLIC_COMMENTS_API_URL="$COMMENTS_API_URL" \
                 npm run build
             )
 

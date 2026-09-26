@@ -34,6 +34,10 @@ export default function Home() {
           <h1>弾き語り曲投稿祭 2027</h1>
           <p className="hero__lead">
             歌唱から演奏まで、一人で完結できるオリジナル曲を楽しむ投稿祭です。
+           <br />
+           <br />
+            ※このページは現在制作中のテストページです。
+            「弾き語り曲投稿祭2027」の開催は未定です。
           </p>
           <div className="button-row">
             <Link className="button button--primary" href="/works">

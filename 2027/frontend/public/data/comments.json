@@ -1,16 +1,10 @@
 [
   {
-    "commentId": "c001",
+    "commentId": "f827023d-b147-4471-badc-249c4ff104cd",
     "videoId": "sm46282210",
-    "authorName": "listener_A",
-    "comment": "静かなピアノと歌声の距離感がとても好きでした。最後の余韻までずっと聴いていたくなります。",
-    "submittedAt": "2027-07-20"
-  },
-  {
-    "commentId": "c002",
-    "videoId": "sm46284513",
-    "authorName": "匿名",
-    "comment": "ギター一本だからこそメロディの良さがよく伝わってきました。サビの開放感が素敵です。",
-    "submittedAt": "2027-07-20"
+    "authorName": "D-Neb GAKKI",
+    "xAccount": "GAKKI_D_Neb",
+    "comment": "このコメントは\nテストです",
+    "submittedAt": "2026/09/26 15:26:51"
   }
 ]
