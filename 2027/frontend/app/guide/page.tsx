@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { workRegistrationFormUrl } from "@/lib/siteLinks";
 
 export const metadata: Metadata = {
   title: "Guide",
@@ -67,14 +68,25 @@ export default function GuidePage() {
               <div>
                 <h3>作品情報を登録する（任意）</h3>
                 <p>
-                  作品情報フォームから、使用ボーカル、使用楽器、Xアカウント、告知ポストURL、作品の紹介文など、Webサイトに掲載する情報を登録できます。
+                  作品情報登録フォームから、使用ボーカル、使用楽器、Xアカウント、告知ポストURL、作品の紹介文など、Webサイトに掲載する情報を登録できます。
                 </p>
                 <p>
                   フォームへの登録は任意です。
                 </p>
-                <span className="button button--ghost">
-                  作品情報フォーム（準備中）
-                </span>
+                {workRegistrationFormUrl ? (
+                  <a
+                    className="button button--ghost"
+                    href={workRegistrationFormUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    作品情報登録フォーム ↗
+                  </a>
+                ) : (
+                  <span className="button button--ghost">
+                    作品情報フォーム（準備中）
+                  </span>
+                )}
               </div>
             </div>
           </div>

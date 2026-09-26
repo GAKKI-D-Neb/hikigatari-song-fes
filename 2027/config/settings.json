@@ -12,5 +12,8 @@
     "work_details_sheet": "work_details",
     "comments_sheet": "comments",
     "comments_api_url": "https://script.google.com/macros/s/AKfycbwkjI2bzqCLBE_tyBSGiOdTJf83qDDM5jV9EXoLwJOBL1OMpBapP2D_agq-e-QNHbzi/exec"
+  },
+  "links": {
+    "work_registration_form": "https://docs.google.com/forms/d/e/1FAIpQLSc8Oz73Gx927pzrZTSf2E0AmcC3uMluKv3w7MTbF-rbAV_Z3w/viewform?usp=dialog"
   }
 }
