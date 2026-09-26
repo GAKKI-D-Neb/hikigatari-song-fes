@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { workRegistrationFormUrl } from "@/lib/siteLinks";
 
 export const metadata: Metadata = {
   title: "Guide",
@@ -67,14 +68,25 @@ export default function GuidePage() {
               <div>
                 <h3>作品情報を登録する（任意）</h3>
                 <p>
-                  作品情報フォームから、使用ボーカル、使用楽器、Xアカウント、告知ポストURL、作品の紹介文など、Webサイトに掲載する情報を登録できます。
+                  作品情報登録フォームから、使用ボーカル、使用楽器、Xアカウント、告知ポストURL、作品の紹介文など、Webサイトに掲載する情報を登録できます。
                 </p>
                 <p>
                   フォームへの登録は任意です。
                 </p>
-                <span className="button button--ghost">
-                  作品情報フォーム（準備中）
-                </span>
+                {workRegistrationFormUrl ? (
+                  <a
+                    className="button button--ghost"
+                    href={workRegistrationFormUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    作品情報登録フォーム ↗
+                  </a>
+                ) : (
+                  <span className="button button--ghost">
+                    作品情報フォーム（準備中）
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -194,6 +206,10 @@ export default function GuidePage() {
                     <td><span className="status-badge status-badge--ng">NG</span></td>
                     <td>主旋律とは別のコーラス・ハモリを同時に重ねるなど、一人では歌唱できない構成</td>
                   </tr>
+                  <tr>
+                    <td><span className="status-badge status-badge--ng">NG</span></td>
+                    <td>手が3本必要なピアノフレーズなど、一人では物理的に演奏できない構成</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -202,7 +218,7 @@ export default function GuidePage() {
               一人で演奏できる構成であれば、一人で実際に演奏した実演録音である必要はありません。打ち込み・ソフト音源・一般的なMIX処理は可能です。
             </p>
             <p className="form-note">
-              ボーカルをダブリングについては、MIX処理の範囲内としてOKとします。
+              ボーカルのダブリングについては、MIX処理の範囲内としてOKとします。
             </p>
             <p className="form-note">
               一般的に一人で演奏するのが困難な構成であっても、特殊な奏法や高度な演奏技術を用いることで理論上は一人でも演奏が可能となる場合は、投稿者自身の判断で参加していただいて構いません。<br />

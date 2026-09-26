@@ -1,5 +1,6 @@
 import Link from "next/link";
 import CopyTextButton from "@/components/CopyTextButton";
+import { workRegistrationFormUrl } from "@/lib/siteLinks";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -126,15 +127,26 @@ export default function Home() {
 
           <div className="form-info-panel">
             <div>
-              <strong>作品情報フォーム</strong>
+              <strong>作品情報登録フォーム</strong>
               <p>
                 投稿後にこちらから、Webサイトに掲載する作品情報を登録できます。
                 登録は任意です。
               </p>
             </div>
-            <span className="button button--ghost form-info-panel__pending">
-              作品情報フォーム（準備中）
-            </span>
+            {workRegistrationFormUrl ? (
+              <a
+                className="button button--ghost"
+                href={workRegistrationFormUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                作品情報登録フォーム ↗
+              </a>
+            ) : (
+              <span className="button button--ghost form-info-panel__pending">
+                作品情報フォーム（準備中）
+              </span>
+            )}
           </div>
         </div>
         <p className="notice">
