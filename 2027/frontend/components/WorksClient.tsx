@@ -78,7 +78,11 @@ function WorkDescription({
   );
 }
 
-export default function WorksClient() {
+type WorksClientProps = {
+  acceptComments: boolean;
+};
+
+export default function WorksClient({ acceptComments }: WorksClientProps) {
   const [works, setWorks] = useState<Work[]>([]);
   const [query, setQuery] = useState("");
   const [vocal, setVocal] = useState("すべて");
@@ -293,12 +297,14 @@ export default function WorksClient() {
                   onToggle={() => toggleDescription(work.videoId)}
                 />
 
-                <button
-                  className="button button--small button--primary work-card__comment"
-                  onClick={() => setSelectedWork(work)}
-                >
-                  感想を書く
-                </button>
+                {acceptComments && (
+                  <button
+                    className="button button--small button--primary work-card__comment"
+                    onClick={() => setSelectedWork(work)}
+                  >
+                    感想を書く
+                  </button>
+                )}
               </div>
             </article>
           );
@@ -309,7 +315,9 @@ export default function WorksClient() {
         <div className="empty-state">条件に一致する作品がありません。</div>
       )}
 
-      <CommentModal work={selectedWork} onClose={() => setSelectedWork(null)} />
+      {acceptComments && (
+        <CommentModal work={selectedWork} onClose={() => setSelectedWork(null)} />
+      )}
     </>
   );
 }

@@ -1,18 +1,16 @@
 name: Build and Deploy Pages
 
 on:
-  # 手動実行
-  workflow_dispatch:
-
-  # Pull Requestのマージ時に実行
-  pull_request:
-    types:
-      - closed
+  # mainブランチが更新されたとき
+  push:
     branches:
       - main
 
+  # 手動実行
+  workflow_dispatch:
+
   # 投稿祭開始後に有効化
-  # 日本時間で3時間おき
+  # 3時間おき（UTCで指定）
   # schedule:
   #   - cron: "0 */3 * * *"
 
