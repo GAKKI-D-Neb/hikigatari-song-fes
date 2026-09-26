@@ -1,8 +1,15 @@
-
 name: Build and Deploy Pages
 
 on:
+  # 手動実行
   workflow_dispatch:
+
+  # Pull Requestのマージ時に実行
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
 
   # 投稿祭開始後に有効化
   # 日本時間で3時間おき
