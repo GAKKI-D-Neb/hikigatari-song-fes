@@ -43,6 +43,7 @@ pnpm-debug.log*
 *.key
 
 credentials.json
+config/year-sheets.json
 service-account*.json
 
 
@@ -79,3 +80,10 @@ htmlcov/
 .cache/
 tmp/
 tmp-data/
+
+
+# =========================================================
+# Google Apps Script / clasp
+# =========================================================
+.clasprc.json
+.clasp.json

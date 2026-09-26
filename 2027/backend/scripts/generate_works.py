@@ -1,41 +1,48 @@
 
+"""Google Sheetsの作品情報を統合し、works.jsonを生成する。"""
+
 import argparse
-import csv
 import json
-import os
 import re
 from datetime import datetime
 from pathlib import Path
 
 import gspread
-from dotenv import load_dotenv
 
+from config import (
+    get_credentials_path,
+    get_sheet_ids,
+    get_year_settings,
+)
+
+
+YEAR = "2027"
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 
-load_dotenv(BACKEND_DIR / ".env")
+DEFAULT_OUTPUT = (
+    BACKEND_DIR.parent
+    / "frontend"
+    / "public"
+    / "data"
+    / "works.json"
+)
 
 
-def read_csv(path):
-    """CSVファイルを読み込む。"""
-    with open(path, encoding="utf-8-sig", newline="") as file:
-        return list(csv.DictReader(file))
-
-
-def read_google_sheet(spreadsheet_id, sheet_name):
-    """Googleスプレッドシートを読み込む。"""
-    client = gspread.service_account(
-        filename=os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
-    )
-
+def read_google_sheet(
+    client: gspread.Client,
+    spreadsheet_id: str,
+    sheet_name: str,
+) -> list[dict]:
+    """指定したGoogleスプレッドシートを読み込む。"""
     spreadsheet = client.open_by_key(spreadsheet_id)
     worksheet = spreadsheet.worksheet(sheet_name)
 
     return worksheet.get_all_records()
 
 
-def is_enabled(value):
-    """スプレッドシートのTRUE/FALSEを判定する。"""
+def is_enabled(value) -> bool:
+    """Google SheetsのTRUE/FALSEを判定する。"""
     if isinstance(value, bool):
         return value
 
@@ -46,13 +53,22 @@ def is_enabled(value):
     }
 
 
-def extract_video_id(value):
-    """動画IDまたは一般的なニコニコ動画URLからIDを抽出する。"""
+def extract_video_id(value) -> str:
+    """動画IDまたはニコニコ動画URLから動画IDを抽出する。"""
     text = str(value or "").strip()
 
-    if re.fullmatch(r"sm\d+", text, flags=re.IGNORECASE):
+    if not text:
+        return ""
+
+    # 動画IDのみ
+    if re.fullmatch(
+        r"sm\d+",
+        text,
+        flags=re.IGNORECASE,
+    ):
         return text.lower()
 
+    # 通常URLおよび短縮URL
     patterns = [
         (
             r"(?:https?://)?"
@@ -79,8 +95,8 @@ def extract_video_id(value):
     return ""
 
 
-def normalize_x_account(value):
-    """XアカウントのURLや@IDをユーザーIDに統一する。"""
+def normalize_x_account(value) -> str:
+    """XのURLまたは@IDをユーザーIDに変換する。"""
     text = str(value or "").strip()
 
     if not text:
@@ -89,7 +105,8 @@ def normalize_x_account(value):
     match = re.fullmatch(
         r"(?:https?://)?(?:www\.)?"
         r"(?:x\.com|twitter\.com)/"
-        r"([A-Za-z0-9_]{1,15})/?",
+        r"([A-Za-z0-9_]{1,15})/?"
+        r"(?:\?.*)?",
         text,
         flags=re.IGNORECASE,
     )
@@ -97,11 +114,17 @@ def normalize_x_account(value):
     if match:
         return match.group(1)
 
-    return text.lstrip("@")
+    text = text.lstrip("@")
+
+    # 不正なIDをそのまま公開しない
+    if re.fullmatch(r"[A-Za-z0-9_]{1,15}", text):
+        return text
+
+    return ""
 
 
-def split_values(value):
-    """カンマや読点などで区切られた値を配列に変換する。"""
+def split_values(value) -> list[str]:
+    """複数のボーカル名・楽器名を配列に変換する。"""
     text = str(value or "").strip()
 
     if not text:
@@ -109,41 +132,52 @@ def split_values(value):
 
     return [
         item.strip()
-        for item in re.split(r"[,，、・\n]+", text)
+        for item in re.split(
+            r"[,，、・\n]+",
+            text,
+        )
         if item.strip()
     ]
 
 
-def parse_timestamp(value):
-    """重複回答の日時比較に使用する。"""
-    text = str(value or "").strip()
+def parse_timestamp(value) -> datetime:
+    """フォーム回答のタイムスタンプを解析する。"""
+    if isinstance(value, datetime):
+        return value.replace(tzinfo=None)
 
-    if not text:
-        return datetime.min
+    text = str(value or "").strip()
 
     formats = [
         "%Y/%m/%d %H:%M:%S",
         "%Y/%m/%d %H:%M",
         "%Y/%m/%d",
         "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
         "%Y-%m-%d",
     ]
 
     for date_format in formats:
         try:
-            return datetime.strptime(text, date_format)
+            return datetime.strptime(
+                text,
+                date_format,
+            )
         except ValueError:
             continue
 
     return datetime.min
 
 
-def prepare_details(details):
-    """掲載対象のフォーム情報を動画IDごとに整理する。"""
+def prepare_details(
+    details: list[dict],
+) -> dict[str, dict]:
+    """掲載対象の作品詳細を動画IDごとに整理する。"""
     result = {}
 
     for row in details:
-        if not is_enabled(row.get("掲載対象", False)):
+        if not is_enabled(
+            row.get("掲載対象", False)
+        ):
             continue
 
         video_id = extract_video_id(
@@ -160,76 +194,92 @@ def prepare_details(details):
             result[video_id] = row
             continue
 
-        # 重複回答は新しいものを採用する。
-        # 同じ日時なら後に読み込んだ回答を採用する。
         current_time = parse_timestamp(
             row.get("タイムスタンプ")
         )
+
         previous_time = parse_timestamp(
             previous.get("タイムスタンプ")
         )
 
+        # 同じ日時の場合は、後の行を採用する
         if current_time >= previous_time:
             result[video_id] = row
 
     return result
 
 
-def get_vocals(detail):
-    """歌唱区分とキャラクター名をJSON用の配列に変換する。"""
+def get_vocals(detail: dict) -> list[str]:
+    """歌唱区分・キャラクター名から配列を生成する。"""
     vocal_type = str(
-        detail.get("使用ボーカル", "")
+        detail.get("使用ボーカル") or ""
     ).strip()
 
     if vocal_type == "人間歌唱":
         return ["人間歌唱"]
 
     if vocal_type == "ボカロ・合成音声":
-        value = detail.get(
-            "使用キャラクター名（修正後）"
-        ) or detail.get("使用キャラクター名")
+        value = (
+            detail.get("使用キャラクター名（修正後）")
+            or detail.get("使用キャラクター名")
+        )
 
         return split_values(value)
 
     return []
 
 
-def get_instruments(detail):
-    """運営による修正後の使用楽器を優先する。"""
-    value = detail.get(
-        "使用楽器（修正後）"
-    ) or detail.get("使用楽器")
+def get_instruments(detail: dict) -> list[str]:
+    """運営が修正した楽器名を優先する。"""
+    value = (
+        detail.get("使用楽器（修正後）")
+        or detail.get("使用楽器")
+    )
 
     return split_values(value)
 
 
-def generate_works(works, details):
-    """2つのデータを統合し、フロントエンド用の形式にする。"""
+def generate_works(
+    works: list[dict],
+    details: list[dict],
+) -> list[dict]:
+    """動画IDで作品情報を統合する。"""
     detail_map = prepare_details(details)
 
     result = []
     seen_video_ids = set()
 
     for work in works:
-        if not is_enabled(work.get("included", False)):
+        # 作品自体が掲載対象外なら除外
+        if not is_enabled(
+            work.get("included", False)
+        ):
             continue
 
         video_id = extract_video_id(
-            work.get("video_id") or work.get("url")
+            work.get("video_id")
+            or work.get("url")
         )
 
         if not video_id:
+            print(
+                "WARNING: 動画IDを取得できない作品を"
+                "スキップしました。"
+            )
             continue
 
-        # 重複した作品は最初の1件を採用
+        # 重複作品を除外
         if video_id in seen_video_ids:
             continue
 
         seen_video_ids.add(video_id)
 
+        # フォーム回答がなければ空の辞書
         detail = detail_map.get(video_id, {})
 
-        url = str(work.get("url") or "").strip()
+        url = str(
+            work.get("url") or ""
+        ).strip()
 
         if not url:
             url = (
@@ -242,86 +292,138 @@ def generate_works(works, details):
         )
 
         announcement_url = str(
-            detail.get("作品の告知ポストURL") or ""
+            detail.get("作品の告知ポストURL")
+            or ""
         ).strip()
 
-        result.append(
-            {
-                "videoId": video_id,
-                "title": str(
-                    work.get("title") or ""
-                ).strip(),
-                "creator": str(
-                    work.get("creator") or ""
-                ).strip(),
-                "url": url,
-                "xAccount": x_account or None,
-                "announcementPostUrl": (
-                    announcement_url or None
-                ),
-                "vocals": get_vocals(detail),
-                "instruments": get_instruments(detail),
-                "description": str(
-                    detail.get("作品の紹介文") or ""
-                ),
-            }
-        )
+        result.append({
+            "videoId": video_id,
+            "title": str(
+                work.get("title") or ""
+            ).strip(),
+            "creator": str(
+                work.get("creator") or ""
+            ).strip(),
+            "url": url,
+            "xAccount": (
+                x_account or None
+            ),
+            "announcementPostUrl": (
+                announcement_url or None
+            ),
+            "vocals": get_vocals(detail),
+            "instruments": get_instruments(detail),
+            "description": str(
+                detail.get("作品の紹介文") or ""
+            ),
+        })
 
     return result
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="弾き語り曲投稿祭2027の作品JSONを生成する"
+        description=(
+            "Google Sheetsから作品情報を取得し、"
+            "works.jsonを生成する"
+        )
     )
 
     parser.add_argument(
+        "--year",
+        default=YEAR,
+        help="対象年度",
+    )
+
+    # 既存の実行コマンドとの互換性
+    parser.add_argument(
         "--mode",
-        choices=["sample", "live"],
-        default="sample",
+        choices=["live"],
+        default="live",
+        help="データ取得モード",
     )
 
     parser.add_argument(
         "--output",
         type=Path,
-        default=BACKEND_DIR.parent
-        / "frontend/public/data/works.json",
+        default=None,
+        help="JSONの出力先",
     )
 
     args = parser.parse_args()
 
-    if args.mode == "sample":
-        works = read_csv(
-            BACKEND_DIR / "samples/works_2027.csv"
-        )
+    year = args.year
 
-        details = read_csv(
-            BACKEND_DIR / "samples/work_details_2027.csv"
-        )
+    # 共通の非公開設定
+    sheet_ids = get_sheet_ids(year)
 
+    # 年度別の公開設定
+    settings = get_year_settings(year)
+
+    deploy_settings = settings["deploy"]
+
+    works_sheet_name = deploy_settings[
+        "works_sheet"
+    ]
+
+    details_sheet_name = deploy_settings[
+        "work_details_sheet"
+    ]
+
+    # Google Sheetsへ接続
+    client = gspread.service_account(
+        filename=get_credentials_path()
+    )
+
+    print(
+        f"{year}年の作品情報を取得しています..."
+    )
+
+    works = read_google_sheet(
+        client,
+        sheet_ids["works"],
+        works_sheet_name,
+    )
+
+    details = read_google_sheet(
+        client,
+        sheet_ids["work_details"],
+        details_sheet_name,
+    )
+
+    print(
+        f"作品管理シート: {len(works)}件"
+    )
+
+    print(
+        f"作品詳細シート: {len(details)}件"
+    )
+
+    # データを統合
+    result = generate_works(
+        works,
+        details,
+    )
+
+    # JSONの出力先
+    if args.output is not None:
+        output_path = args.output
     else:
-        works = read_google_sheet(
-            os.environ["WORKS_SPREADSHEET_ID"],
-            os.getenv("WORKS_SHEET_NAME", "works"),
+        output_path = (
+            BACKEND_DIR.parent.parent
+            / year
+            / "frontend"
+            / "public"
+            / "data"
+            / "works.json"
         )
 
-        details = read_google_sheet(
-            os.environ["WORK_DETAILS_SPREADSHEET_ID"],
-            os.getenv(
-                "WORK_DETAILS_SHEET_NAME",
-                "work_details",
-            ),
-        )
-
-    result = generate_works(works, details)
-
-    args.output.parent.mkdir(
+    output_path.parent.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    with open(
-        args.output,
+    with output_path.open(
         "w",
         encoding="utf-8",
     ) as file:
@@ -335,8 +437,11 @@ def main():
         file.write("\n")
 
     print(
-        f"{len(result)}作品を出力しました: "
-        f"{args.output}"
+        f"{len(result)}作品を出力しました。"
+    )
+
+    print(
+        f"出力先: {output_path}"
     )
 
 

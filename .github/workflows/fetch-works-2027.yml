@@ -1,0 +1,150 @@
+
+name: 2027 Fetch Nico Works
+
+on:
+  workflow_dispatch:
+
+  # 投稿祭開始後に有効化
+  # 日本時間の毎日6:00、8:00
+  # GitHub ActionsのcronはUTCで指定
+  # schedule:
+  #   - cron: "0 21,23 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fetch-works-2027
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    name: Fetch Nico works
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ----------------------------------
+      # リポジトリ取得
+      # ----------------------------------
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ----------------------------------
+      # 非公開設定ファイルの生成
+      # ----------------------------------
+
+      - name: Create private Sheets configuration
+        shell: bash
+        env:
+          YEAR_SHEETS_JSON: ${{ secrets.YEAR_SHEETS_JSON }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$YEAR_SHEETS_JSON" ]]; then
+            echo "YEAR_SHEETS_JSON is not configured." >&2
+            exit 1
+          fi
+
+          mkdir -p config
+
+          printf '%s' "$YEAR_SHEETS_JSON" \
+            > config/year-sheets.json
+
+          chmod 600 config/year-sheets.json
+
+          # IDの内容をログに表示せずに検証
+          jq -e '
+            .["2027"].works |
+            type == "string" and length > 0
+          ' config/year-sheets.json > /dev/null
+
+          jq -e '
+            .["2027"].work_details |
+            type == "string" and length > 0
+          ' config/year-sheets.json > /dev/null
+
+      # ----------------------------------
+      # 年度別設定ファイルの検証
+      # ----------------------------------
+
+      - name: Validate fetch configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CONFIG="2027/config/settings.json"
+
+          jq -e '
+            (.fetch.tag | type == "string" and length > 0)
+            and
+            (.fetch.sheet | type == "string" and length > 0)
+            and
+            (.fetch.production | type == "boolean")
+            and
+            (
+              .fetch.limit == null
+              or
+              (
+                .fetch.limit |
+                type == "number" and
+                . >= 1 and
+                floor == .
+              )
+            )
+          ' "$CONFIG" > /dev/null
+
+      # ----------------------------------
+      # Python 3.12
+      # ----------------------------------
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: 2027/backend/requirements.txt
+
+      - name: Install Python dependencies
+        working-directory: 2027/backend
+        run: |
+          python -m pip install \
+            -r requirements.txt
+
+      # ----------------------------------
+      # Google認証
+      # ----------------------------------
+
+      - name: Authenticate to Google
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_JSON }}'
+          create_credentials_file: true
+          export_environment_variables: true
+
+      # ----------------------------------
+      # ニコニコ動画取得・同期
+      # ----------------------------------
+
+      - name: Fetch and sync videos
+        working-directory: 2027/backend
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # タグ、シート名、取得件数は
+          # fetch_niconico.pyがsettings.jsonから取得する
+
+          PRODUCTION=$(
+            jq -r '.fetch.production' \
+              ../config/settings.json
+          )
+
+          args=(--write)
+
+          if [[ "$PRODUCTION" == "true" ]]; then
+            args+=(--production)
+          fi
+
+          python scripts/fetch_niconico.py "${args[@]}"
