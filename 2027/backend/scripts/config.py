@@ -44,44 +44,33 @@ def get_credentials_path() -> str:
 
 
 def get_sheet_ids(year: str) -> dict[str, str]:
-    """指定年度のスプレッドシートIDを取得する。"""
+    """年度別の非公開スプレッドシートIDを取得する。"""
     if not YEAR_SHEETS_PATH.is_file():
         raise FileNotFoundError(
-            "スプレッドシート設定が見つかりません: "
-            f"{YEAR_SHEETS_PATH}"
+            f"設定ファイルがありません: {YEAR_SHEETS_PATH}"
         )
 
-    with YEAR_SHEETS_PATH.open(
-        encoding="utf-8"
-    ) as file:
+    with YEAR_SHEETS_PATH.open(encoding="utf-8") as file:
         settings = json.load(file)
-
-    if not isinstance(settings, dict):
-        raise ValueError(
-            "year-sheets.jsonの形式が正しくありません。"
-        )
 
     year_settings = settings.get(str(year))
 
     if not isinstance(year_settings, dict):
         raise ValueError(
-            f"{year}年のスプレッドシート設定がありません。"
+            f"{year}年の設定がありません。"
         )
 
     result = {}
 
-    for key in ("works", "work_details"):
-        spreadsheet_id = year_settings.get(key)
+    for key in ("works", "work_details", "comments"):
+        value = year_settings.get(key)
 
-        if (
-            not isinstance(spreadsheet_id, str)
-            or not spreadsheet_id.strip()
-        ):
+        if not isinstance(value, str) or not value.strip():
             raise ValueError(
                 f"{year}年の{key}のIDが未設定です。"
             )
 
-        result[key] = spreadsheet_id.strip()
+        result[key] = value.strip()
 
     return result
 

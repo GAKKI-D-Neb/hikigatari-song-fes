@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Work } from "@/types";
 import CommentModal from "@/components/CommentModal";
 
@@ -8,6 +8,74 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 function uniqueSorted(values: string[]) {
   return [...new Set(values)].sort((a, b) => a.localeCompare(b, "ja"));
+}
+
+/** 紹介文が実際に省略される場合だけ展開ボタンを表示する。 */
+function WorkDescription({
+  description,
+  isExpanded,
+  onToggle,
+}: {
+  description: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const descriptionRef = useRef<HTMLParagraphElement>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+
+  useLayoutEffect(() => {
+    const element = descriptionRef.current;
+    const wrapper = wrapperRef.current;
+    if (!element || !wrapper) return;
+
+    const checkOverflow = () => {
+      // 展開中も一時的に折りたたみ状態で計測する。
+      // 計測後すぐ元に戻すので、展開状態は維持される。
+      const wasExpanded = element.classList.contains("is-expanded");
+      if (wasExpanded) element.classList.remove("is-expanded");
+
+      const overflowing = element.scrollHeight > element.clientHeight + 1;
+
+      if (wasExpanded) element.classList.add("is-expanded");
+      setIsOverflowing((previous) =>
+        previous === overflowing ? previous : overflowing
+      );
+    };
+
+    checkOverflow();
+
+    // レスポンシブな列幅変更やフォント読み込み後の変化に対応。
+    const observer = new ResizeObserver(checkOverflow);
+    observer.observe(wrapper);
+    document.fonts?.ready.then(checkOverflow);
+
+    return () => observer.disconnect();
+  }, [description, isExpanded]);
+
+  return (
+    <div className="work-card__description-wrap" ref={wrapperRef}>
+      <p
+        ref={descriptionRef}
+        className={
+          isExpanded
+            ? "work-card__description is-expanded"
+            : "work-card__description"
+        }
+      >
+        {description}
+      </p>
+      {(isOverflowing || isExpanded) && (
+        <button
+          type="button"
+          className="description-toggle"
+          onClick={onToggle}
+        >
+          {isExpanded ? "閉じる" : "続きを読む"}
+        </button>
+      )}
+    </div>
+  );
 }
 
 export default function WorksClient() {
@@ -219,23 +287,11 @@ export default function WorksClient() {
                   </div>
                 </div>
 
-                <div className="work-card__description-wrap">
-                  <p
-                    className={
-                      isExpanded
-                        ? "work-card__description is-expanded"
-                        : "work-card__description"
-                    }
-                  >
-                    {work.description}
-                  </p>
-                  <button
-                    className="description-toggle"
-                    onClick={() => toggleDescription(work.videoId)}
-                  >
-                    {isExpanded ? "閉じる" : "続きを読む"}
-                  </button>
-                </div>
+                <WorkDescription
+                  description={work.description}
+                  isExpanded={isExpanded}
+                  onToggle={() => toggleDescription(work.videoId)}
+                />
 
                 <button
                   className="button button--small button--primary work-card__comment"

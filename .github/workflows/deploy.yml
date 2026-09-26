@@ -1,8 +1,15 @@
-
 name: Build and Deploy Pages
 
 on:
+  # 手動実行
   workflow_dispatch:
+
+  # Pull Requestのマージ時に実行
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
 
   # 投稿祭開始後に有効化
   # 日本時間で3時間おき
@@ -208,14 +215,21 @@ jobs:
             # comments.json
             # ------------------------------
 
-            # 感想バックエンドは未実装のため、
-            # 現在は既存のJSONを使用
-            test -f \
-              "$FRONTEND/public/data/comments.json"
+            (
+              cd "$BACKEND"
+
+              python scripts/generate_comments.py \
+                --year "$year"
+            )
 
             # ------------------------------
             # Next.jsビルド
             # ------------------------------
+
+            COMMENTS_API_URL=$(
+              jq -er '.deploy.comments_api_url |
+                select(type == "string" and length > 0)' "$CONFIG"
+            )
 
             (
               cd "$FRONTEND"
@@ -223,6 +237,7 @@ jobs:
               npm ci
 
               NEXT_PUBLIC_BASE_PATH="$BASE_PATH" \
+              NEXT_PUBLIC_COMMENTS_API_URL="$COMMENTS_API_URL" \
                 npm run build
             )
 
