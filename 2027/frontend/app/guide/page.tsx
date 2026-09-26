@@ -206,6 +206,10 @@ export default function GuidePage() {
                     <td><span className="status-badge status-badge--ng">NG</span></td>
                     <td>主旋律とは別のコーラス・ハモリを同時に重ねるなど、一人では歌唱できない構成</td>
                   </tr>
+                  <tr>
+                    <td><span className="status-badge status-badge--ng">NG</span></td>
+                    <td>手が3本必要なピアノフレーズなど、一人では物理的に演奏できない構成</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
