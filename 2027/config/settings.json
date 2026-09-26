@@ -14,6 +14,18 @@
     "comments_api_url": "https://script.google.com/macros/s/AKfycbwkjI2bzqCLBE_tyBSGiOdTJf83qDDM5jV9EXoLwJOBL1OMpBapP2D_agq-e-QNHbzi/exec"
   },
   "links": {
-    "work_registration_form": "https://docs.google.com/forms/d/e/1FAIpQLSc8Oz73Gx927pzrZTSf2E0AmcC3uMluKv3w7MTbF-rbAV_Z3w/viewform?usp=dialog"
+    "_comment_work_registration_form": "https://docs.google.com/forms/d/e/1FAIpQLSc8Oz73Gx927pzrZTSf2E0AmcC3uMluKv3w7MTbF-rbAV_Z3w/viewform?usp=dialog",
+    "work_registration_form": "",
+    "twipla": "",
+    "organizer_x": "https://x.com/GAKKI_D_Neb",
+    "illustrator_x": ""
+  },
+  "site": {
+    "_comment": "phase: prelaunch=開催前、live=開催中、ended=開催終了",
+    "phase": "prelaunch", 
+    "show_sample_works": true,
+    "show_sample_comments": true,
+    "accept_comments": true,
+    "public_url": "https://gakki-d-neb.github.io/hikigatari-song-fes/2027/"
   }
 }
