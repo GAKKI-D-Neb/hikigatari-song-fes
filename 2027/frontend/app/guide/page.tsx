@@ -20,15 +20,17 @@ export default function GuidePage() {
 
         <h1>参加ガイド</h1>
 
-        <p>
-          弾き語り曲投稿祭2027 参加の流れと、作品に関するルールを掲載しています。
-        </p>
+          <p>
+            弾き語り曲投稿祭2027 参加の流れと、作品に関するルールを掲載しています。
 
-        {siteSettings.phase === "prelaunch" && (
-          <p className="notice">
-            「弾き語り曲投稿祭2027」の開催は未定です。
+            {siteSettings.phase === "planning" && (
+              <>
+                <br />
+                <br />
+                ※「弾き語り曲投稿祭2027」の開催は未定です。
+              </>
+            )}
           </p>
-        )}
       </div>
 
       {/* 参加の流れ */}

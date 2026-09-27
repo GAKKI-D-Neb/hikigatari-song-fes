@@ -15,7 +15,11 @@ export default function CommentsPage() {
         <div className="page-heading">
           <p className="eyebrow">COMMENTS</p>
           <h1>感想掲示板</h1>
-          <p>「弾き語り曲投稿祭2027」の開催は未定です。感想掲示板は現在準備中です。</p>
+          <p>
+            {siteSettings.phase === "planning"
+              ? "「弾き語り曲投稿祭2027」の開催は未定です。感想掲示板は現在準備中です。"
+              : "感想掲示板は現在準備中です。"}
+          </p>
         </div>
       </section>
     );
@@ -28,11 +32,14 @@ export default function CommentsPage() {
         <h1>感想掲示板</h1>
         <p>
           弾き語り曲投稿祭2027 参加作品に対して寄せられた感想を掲載しています。
-          {siteSettings.phase === "prelaunch" && (
+
+          {(siteSettings.phase === "planning" ||
+            siteSettings.phase === "prelaunch") && (
             <>
               <br />
               <br />
-              ※「弾き語り曲投稿祭2027」の開催は未定です。現在はWebサイトの動作確認のため、サンプルデータを表示しています。
+              ※{siteSettings.phase === "planning" && "「弾き語り曲投稿祭2027」の開催は未定です。"}
+              現在はWebサイトの動作確認のため、サンプルデータを表示しています。
             </>
           )}
         </p>

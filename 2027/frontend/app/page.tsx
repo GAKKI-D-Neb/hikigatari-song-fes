@@ -53,7 +53,7 @@ export default function Home() {
             歌唱から演奏まで、一人で完結できる
             オリジナル曲を楽しむ投稿祭です。
 
-            {siteSettings.phase === "prelaunch" && (
+            {siteSettings.phase === "planning" && (
               <>
                 <br />
                 <br />
@@ -64,7 +64,8 @@ export default function Home() {
           </p>
 
           <div className="button-row">
-            {siteSettings.phase !== "prelaunch" && (
+            {(siteSettings.phase === "live" ||
+              siteSettings.phase === "ended") && (
               <Link
                 className="button button--primary"
                 href="/works"
@@ -75,9 +76,10 @@ export default function Home() {
 
             <Link
               className={
-                showWorks
-                  ? "button button--ghost"
-                  : "button button--primary"
+                siteSettings.phase === "planning" ||
+                siteSettings.phase === "prelaunch"
+                  ? "button button--primary"
+                  : "button button--ghost"
               }
               href="/guide"
             >
@@ -111,7 +113,7 @@ export default function Home() {
           <p>
             実際に弾き語りで録音する必要はなく、一人で演奏できる構成であれば、打ち込みやソフト音源、歌声合成を使用した作品で参加できます。
             <br />
-            また、ボカロ曲投稿祭として開催しますが、歌い手やシンガーソングライターなど、人間歌唱によるオリジナル曲も歓迎します。
+            ボカロ曲投稿祭として開催しますが、歌い手やシンガーソングライターなど、人間歌唱によるオリジナル曲も歓迎します。
           </p>
 
           <p>
@@ -221,7 +223,7 @@ export default function Home() {
           </div>
         </div>
 
-        {siteSettings.phase === "prelaunch" && (
+        {siteSettings.phase === "planning" && (
           <p className="notice">
             ※ このページは現在モックアップです。
             開催内容・日程・レギュレーションは変更される可能性があります。

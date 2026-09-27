@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { siteSettings } from "@/lib/siteLinks";
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -45,7 +46,17 @@ export default function FaqPage() {
       <div className="page-heading">
         <p className="eyebrow">FAQ</p>
         <h1>よくある質問</h1>
-        <p>弾き語り投稿祭2027 参加条件について迷いやすい点をまとめています。</p>
+        <p>
+          弾き語り投稿祭2027 参加条件について迷いやすい点をまとめています。
+
+          {siteSettings.phase === "planning" && (
+            <>
+              <br />
+              <br />
+              ※「弾き語り曲投稿祭2027」の開催は未定です。
+            </>
+          )}
+        </p>
       </div>
 
       <div className="faq-list">

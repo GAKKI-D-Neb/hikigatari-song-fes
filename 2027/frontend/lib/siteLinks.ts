@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-type SitePhase = "prelaunch" | "live" | "ended";
+type SitePhase = "planning" | "prelaunch" | "live" | "ended";
 
 type Settings = {
   links?: {
@@ -48,7 +48,7 @@ export const siteLinks = {
 // 開催フェーズ・公開設定
 export const siteSettings = {
   phase:
-    settings.site?.phase ?? "prelaunch",
+    settings.site?.phase ?? "planning",
 
   showSampleWorks:
     settings.site?.show_sample_works ?? false,
@@ -64,13 +64,15 @@ export const siteSettings = {
 };
 
 // ページの表示条件
+const isBeforeEvent =
+  siteSettings.phase === "planning" ||
+  siteSettings.phase === "prelaunch";
+
 export const showWorks =
-  siteSettings.phase !== "prelaunch" ||
-  siteSettings.showSampleWorks;
+  !isBeforeEvent || siteSettings.showSampleWorks;
 
 export const showComments =
-  siteSettings.phase !== "prelaunch" ||
-  siteSettings.showSampleComments;
+  !isBeforeEvent || siteSettings.showSampleComments;
 
 // 既存コードとの互換性
 export const workRegistrationFormUrl =
