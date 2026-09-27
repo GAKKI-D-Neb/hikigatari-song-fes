@@ -1,3 +1,6 @@
+
+import { siteLinks } from "@/lib/siteLinks";
+
 export default function Footer() {
   return (
     <footer className="site-footer">
@@ -7,13 +10,15 @@ export default function Footer() {
       </div>
       <div className="site-footer__links">
         <span>主催：D-Neb（GAKKI）</span>
-        <a
-          href="https://x.com/GAKKI_D_Neb"
-          target="_blank"
-          rel="noreferrer"
-        >
-          X / Contact
-        </a>
+        {siteLinks.contactX && (
+          <a
+            href={siteLinks.contactX}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            X / Contact
+          </a>
+        )}
       </div>
     </footer>
   );
