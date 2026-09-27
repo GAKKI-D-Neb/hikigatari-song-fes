@@ -8,6 +8,7 @@ type Settings = {
     work_registration_form?: string;
     twipla?: string;
     organizer_x?: string;
+    contact_x?: string;
     illustrator_x?: string;
   };
 
@@ -40,6 +41,11 @@ export const siteLinks = {
 
   organizerX:
     settings.links?.organizer_x?.trim() ?? "",
+
+  contactX:
+    settings.links?.contact_x?.trim() ||
+    settings.links?.organizer_x?.trim() ||
+    "",
 
   illustratorX:
     settings.links?.illustrator_x?.trim() ?? "",

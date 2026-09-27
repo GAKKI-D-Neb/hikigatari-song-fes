@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { siteSettings } from "@/lib/siteLinks";
+import { siteSettings, siteLinks } from "@/lib/siteLinks";
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -38,6 +38,18 @@ const faqs = [
     q: "他の投稿祭と同時参加できますか？",
     a: "はい。ただし、同時参加する企画側のレギュレーションにも従ってください。",
   },
+  {
+    q: "参加作品をニコニコ動画以外にも投稿してよいですか？",
+    a: "はい。ニコニコ動画以外への投稿や、その投稿時期については制限しません。",
+  },
+  {
+    q: "ニコニコ動画以外で公開済みの曲でも参加できますか？",
+    a: "はい。ニコニコ動画への動画投稿が新規投稿であれば、他のサイト等で公開済みの曲でも参加可能です。",
+  },
+  {
+    q: "一人では厳密には再現できない演奏部分があっても参加できますか？（例：ピアノの弾き語り曲で、ピアノソロ部分を伴奏とあわせて両手で弾ききれない場合）",
+    a: "原則として、投稿する音源自体が一人で弾き語り可能な構成であることが望ましいです。ただし、軽微なアレンジによって一人で弾き語りできるのであれば、投稿する音源を全く同じ譜面で一人で再現できなくても許容します。軽微なアレンジで対応できるかどうかは、投稿者ご自身で判断いただければと思います。",
+  },
 ];
 
 export default function FaqPage() {
@@ -72,16 +84,18 @@ export default function FaqPage() {
         <p className="eyebrow">CONTACT</p>
         <h2>解決しない場合</h2>
         <p>
-          参加条件や作品について判断に迷う場合は、主催 D-Neb（GAKKI）までお問い合わせください。
+          参加条件や作品について判断に迷う場合は、主催までお問い合わせください。
         </p>
-        <a
-          className="button button--ghost"
-          href="https://x.com/GAKKI_D_Neb"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Xで問い合わせる
-        </a>
+        {siteLinks.contactX && (
+          <a
+            className="button button--ghost"
+            href={siteLinks.contactX}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Xで問い合わせる
+          </a>
+        )}
       </section>
     </section>
   );
