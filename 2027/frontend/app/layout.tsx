@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   },
 
   description:
-    siteSettings.phase === "prelaunch"
+    siteSettings.phase === "planning"
       ? "歌唱から演奏まで、一人で完結できるオリジナル曲を楽しむ投稿祭。現在は開催未定のテストサイトです。"
       : "歌唱から演奏まで、一人でステージに立って成立させられるオリジナル曲を楽しむ投稿祭。",
 
@@ -71,16 +71,10 @@ export const metadata: Metadata = {
 
   // 開催前のテスト公開中は
   // 検索エンジンへの登録を控える
-  robots:
-    siteSettings.phase === "prelaunch"
-      ? {
-          index: false,
-          follow: false,
-        }
-      : {
-          index: true,
-          follow: true,
-        },
+  robots: {
+    index: siteSettings.phase !== "planning",
+    follow: true,
+  },
 };
 
 export default function RootLayout({

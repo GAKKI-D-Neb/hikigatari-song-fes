@@ -21,8 +21,8 @@
     "illustrator_x": ""
   },
   "site": {
-    "_comment": "phase: prelaunch=開催前、live=開催中、ended=開催終了",
-    "phase": "prelaunch", 
+    "_comment": "phase: planning=開催決定前、prelaunch=開催前、live=開催中、ended=開催終了",
+    "phase": "planning", 
     "show_sample_works": true,
     "show_sample_comments": true,
     "accept_comments": true,
