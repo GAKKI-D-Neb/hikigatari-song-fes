@@ -133,7 +133,12 @@ export default function Home() {
           <dl className="event-summary">
             <div>
               <dt>開催期間</dt>
-              <dd>2027年 ─ 日程未定</dd>
+              <dd>
+                2027年 7月3日(土) 0:00 ～ 7月5日(月) 23:59
+                {siteSettings.phase === "planning" && (
+                  <small>（予定）</small>
+                )}
+              </dd>
             </div>
 
             <div>
