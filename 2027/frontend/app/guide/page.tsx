@@ -379,7 +379,7 @@ export default function GuidePage() {
                           "status-badge status-badge--tolerated"
                         }
                       >
-                        △
+                        例外的OK
                       </span>
                     </td>
 
@@ -418,7 +418,7 @@ export default function GuidePage() {
               ボーカルのダブリングについては、MIX処理の範囲内としてOKとします。
             </p>
             <p className="form-note">
-              コーラス・ハモリについては、音源制作上の補助的な要素として例外的に許容します。
+              コーラス・ハモリについては、音源制作上の補助的な要素として例外的にOKとします。
               ただし、コーラスを除いても一人で弾き語りとして成立する構成を基本としてください。
             </p>
 
